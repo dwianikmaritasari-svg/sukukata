@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Suku Kata CERIA - Game Edukasi Anak</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Fredoka & Nunito -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@600;800;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Canvas Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        * {
+            font-family: 'Nunito', sans-serif;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        h1, h2, h3, .font-title {
+            font-family: 'Fredoka', cursive;
+        }
+
+        body {
+            background: linear-gradient(135deg, #a8ff78 0%, #78ffd6 100%);
+            min-height: 100vh;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* Custom Bounce & Pop Animations */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(2deg); }
+        }
+
+        @keyframes pulse-slow {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-10px); }
+            40%, 80% { transform: translateX(10px); }
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            80% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); }
+        }
+
+        .animate-float {
+            animation: float 4s ease-in-out infinite;
+        }
+
+        .animate-pulse-slow {
+            animation: pulse-slow 2s infinite;
+        }
+
+        .animate-shake {
+            animation: shake 0.4s ease-in-out;
+        }
+
+        .animate-pop {
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        /* Game Card Styles */
+        .btn-game {
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 8px 0 rgba(0,0,0,0.15);
+        }
+
+        .btn-game:active {
+            transform: translateY(6px);
+            box-shadow: 0 2px 0 rgba(0,0,0,0.15);
+        }
+
+        /* Bubble Style for Level 2 */
+        .bubble {
+            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.4) 60%, rgba(59, 130, 246, 0.6) 100%);
+            box-shadow: inset 0 0 15px rgba(255, 255, 255, 0.8), 0 10px 20px rgba(0,0,0,0.1);
+            backdrop-filter: blur(4px);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #ffb703;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="bg-amber-50 text-slate-800 flex flex-col min-h-screen justify-between overflow-x-hidden">
+
+    <!-- Top Bar Navigation -->
+    <header class="bg-white/80 backdrop-blur-md sticky top-0 z-40 border-b-4 border-yellow-300 shadow-sm px-4 py-3">
+        <div class="max-w-4xl mx-auto flex justify-between items-center">
+            <!-- App Logo / Title -->
+            <button onclick="showDashboard()" class="flex items-center gap-2 group text-left focus:outline-none">
+                <div class="w-11 h-11 bg-gradient-to-tr from-amber-400 to-yellow-300 rounded-2xl flex items-center justify-center text-white text-2xl shadow-md transform group-hover:rotate-12 transition-transform">
+                    <i class="fa-solid fa-shapes"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl md:text-2xl font-bold text-amber-500 leading-none">Suku Kata <span class="text-sky-500">CERIA</span></h1>
+                    <p class="text-xs text-slate-500 font-semibold hidden sm:block">Belajar Fonem & Membaca Interaktif</p>
+                </div>
+            </button>
+
+            <!-- Total Stars & Trophy Score -->
+            <div class="flex items-center gap-3">
+                <div class="bg-amber-100 border-2 border-amber-300 px-3 py-1.5 rounded-full flex items-center gap-2 shadow-inner">
+                    <i class="fa-solid fa-star text-amber-500 text-lg animate-pulse"></i>
+                    <span id="total-stars-count" class="font-bold text-amber-700 text-lg">0</span>
+                </div>
+                <div class="bg-sky-100 border-2 border-sky-300 px-3 py-1.5 rounded-full flex items-center gap-2 shadow-inner">
+                    <i class="fa-solid fa-trophy text-amber-500 text-lg"></i>
+                    <span id="total-trophies-count" class="font-bold text-sky-700 text-lg">0/4</span>
+                </div>
+                <button onclick="resetProgress()" title="Reset Progres" class="w-9 h-9 bg-slate-100 hover:bg-rose-100 text-slate-400 hover:text-rose-500 rounded-full flex items-center justify-center transition">
+                    <i class="fa-solid fa-rotate-right"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto w-full p-4 flex-grow flex flex-col justify-center">
+
+        <!-- ================= DASHBOARD VIEW ================= -->
+        <section id="view-dashboard" class="space-y-6 animate-pop">
+            <!-- Welcome Banner -->
+            <div class="bg-gradient-to-r from-sky-400 via-indigo-400 to-purple-400 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden">
+                <div class="relative z-10">
+                    <span class="bg-white/20 px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase">Petualangan Fonem</span>
+                    <h2 class="text-2xl md:text-3xl font-extrabold mt-2">Halo Teman CERIA! 👋</h2>
+                    <p class="text-sky-100 text-sm md:text-base mt-1 max-w-lg">Pilih Pulau Fonem untuk memulai petualangan serumu belajar membaca suku kata!</p>
+                </div>
+                <i class="fa-solid fa-rocket absolute -right-4 -bottom-4 text-9xl text-white/10 transform -rotate-12"></i>
+            </div>
+
+            <!-- Phonem Island Map Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <!-- Island B -->
+                <div class="bg-white rounded-3xl p-5 border-4 border-amber-300 shadow-lg hover:shadow-xl transition relative overflow-hidden flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-start">
+                            <div class="w-14 h-14 bg-amber-400 rounded-2xl flex items-center justify-center text-white text-3xl font-black shadow-md">
+                                B
+                            </div>
+                            <span id="badge-island-b" class="bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full border border-amber-300">
+                                ⭐ 0/12
+                            </span>
+                        </div>
+                        <h3 class="text-xl font-bold text-slate-800 mt-3">Pulau Fonem B</h3>
+                        <p class="text-xs text-slate-500">Mempelajari suku kata BA, BI, BU, BE, BO</p>
+                    </div>
+
+                    <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+                        <div class="flex gap-1" id="trophy-island-b">
+                            <i class="fa-solid fa-trophy text-slate-300 text-xl"></i>
+                        </div>
+                        <button onclick="selectPhoneme('B')" class="btn-game bg-amber-400 hover:bg-amber-500 text-white font-bold px-5 py-2.5 rounded-2xl text-sm flex items-center gap-2">
+                            <span>Main Sekarang</span>
+                            <i class="fa-solid fa-play"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Island P -->
+                <div class="bg-white rounded-3xl p-5 border-4 border-emerald-300 shadow-lg hover:shadow-xl transition relative overflow-hidden flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-start">
+                            <div class="w-14 h-14 bg-emerald-400 rounded-2xl flex items-center justify-center text-white text-3xl font-black shadow-md">
+                                P
+                            </div>
+                            <span id="badge-island-p" class="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full border border-emerald-300">
+                                ⭐ 0/12
+                            </span>
+                        </div>
+                        <h3 class="text-xl font-bold text-slate-800 mt-3">Pulau Fonem P</h3>
+                        <p class="text-xs text-slate-500">Mempelajari suku kata PA, PI, PU, PE, PO</p>
+                    </div>
+
+                    <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+                        <div class="flex gap-1" id="trophy-island-p">
+                            <i class="fa-solid fa-trophy text-slate-300 text-xl"></i>
+                        </div>
+                        <button onclick="selectPhoneme('P')" class="btn-game bg-emerald-400 hover:bg-emerald-500 text-white font-bold px-5 py-2.5 rounded-2xl text-sm flex items-center gap-2">
+                            <span>Main Sekarang</span>
+                            <i class="fa-solid fa-play"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Island M -->
+                <div class="bg-white rounded-3xl p-5 border-4 border-orange-300 shadow-lg hover:shadow-xl transition relative overflow-hidden flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-start">
+                            <div class="w-14 h-14 bg-orange-400 rounded-2xl flex items-center justify-center text-white text-3xl font-black shadow-md">
+                                M
+                            </div>
+                            <span id="badge-island-m" class="bg-orange-100 text-orange-800 text-xs font-bold px-3 py-1 rounded-full border border-orange-300">
+                                ⭐ 0/12
+                            </span>
+                        </div>
+                        <h3 class="text-xl font-bold text-slate-800 mt-3">Pulau Fonem M</h3>
+                        <p class="text-xs text-slate-500">Mempelajari suku kata MA, MI, MU, ME, MO</p>
+                    </div>
+
+                    <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+                        <div class="flex gap-1" id="trophy-island-m">
+                            <i class="fa-solid fa-trophy text-slate-300 text-xl"></i>
+                        </div>
+                        <button onclick="selectPhoneme('M')" class="btn-game bg-orange-400 hover:bg-orange-500 text-white font-bold px-5 py-2.5 rounded-2xl text-sm flex items-center gap-2">
+                            <span>Main Sekarang</span>
+                            <i class="fa-solid fa-play"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Island W -->
+                <div class="bg-white rounded-3xl p-5 border-4 border-purple-300 shadow-lg hover:shadow-xl transition relative overflow-hidden flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-start">
+                            <div class="w-14 h-14 bg-purple-400 rounded-2xl flex items-center justify-center text-white text-3xl font-black shadow-md">
+                                W
+                            </div>
+                            <span id="badge-island-w" class="bg-purple-100 text-purple-800 text-xs font-bold px-3 py-1 rounded-full border border-purple-300">
+                                ⭐ 0/12
+                            </span>
+                        </div>
+                        <h3 class="text-xl font-bold text-slate-800 mt-3">Pulau Fonem W</h3>
+                        <p class="text-xs text-slate-500">Mempelajari suku kata WA, WI, WU, WE, WO</p>
+                    </div>
+
+                    <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+                        <div class="flex gap-1" id="trophy-island-w">
+                            <i class="fa-solid fa-trophy text-slate-300 text-xl"></i>
+                        </div>
+                        <button onclick="selectPhoneme('W')" class="btn-game bg-purple-400 hover:bg-purple-500 text-white font-bold px-5 py-2.5 rounded-2xl text-sm flex items-center gap-2">
+                            <span>Main Sekarang</span>
+                            <i class="fa-solid fa-play"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ================= LEVEL SELECT VIEW ================= -->
+        <section id="view-level-select" class="hidden space-y-6 animate-pop">
+            <div class="flex items-center justify-between bg-white rounded-2xl p-4 shadow-sm border-2 border-slate-200">
+                <button onclick="showDashboard()" class="text-slate-600 hover:text-slate-900 font-bold flex items-center gap-2">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    <span>Kembali</span>
+                </button>
+                <h2 id="level-select-title" class="text-2xl font-black text-amber-500">Pulau Fonem B</h2>
+                <div class="w-12"></div>
+            </div>
+
+            <!-- Level Cards Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <!-- Level 1 -->
+                <div onclick="startLevel(1)" class="bg-white rounded-3xl p-5 border-4 border-amber-200 hover:border-amber-400 shadow-md hover:shadow-xl cursor-pointer transition transform hover:-translate-y-1 relative group">
+                    <div class="flex items-center gap-4">
+                        <div class="w-16 h-16 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-500 text-3xl font-black">
+                            🥉
+                        </div>
+                        <div>
+                            <div class="text-xs font-bold text-amber-600 uppercase tracking-wider">Level 1</div>
+                            <h3 class="text-lg font-bold text-slate-800">Meniru Suku Kata</h3>
+                            <p class="text-xs text-slate-500">Dengarkan & tirukan suaranya!</p>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex justify-between items-center pt-3 border-t border-slate-100">
+                        <div id="stars-level-1" class="text-amber-400 text-lg space-x-1">
+                            <i class="fa-regular fa-star"></i><i class="fa-regular fa-star"></i><i class="fa-regular fa-star"></i>
+                        </div>
+                        <span class="text-xs font-bold bg-amber-100 text-amber-700 px-3 py-1 rounded-full group-hover:bg-amber-400 group-hover:text-white transition">Mulai</span>
+                    </div>
+                </div>
+
+                <!-- Level 2 -->
+                <div onclick="startLevel(2)" class="bg-white rounded-3xl p-5 border-4 border-sky-200 hover:border-sky-400 shadow-md hover:shadow-xl cursor-pointer transition transform hover:-translate-y-1 relative group">
+                    <div class="flex items-center gap-4">
+                        <div class="w-16 h-16 bg-sky-100 rounded-2xl flex items-center justify-center text-sky-500 text-3xl font-black">
+                            🥈
+                        </div>
+                        <div>
+                            <div class="text-xs font-bold text-sky-600 uppercase tracking-wider">Level 2</div>
+                            <h3 class="text-lg font-bold text-slate-800">Mengulang Cepat</h3>
+                            <p class="text-xs text-slate-500">Ketuk gelembung berurutan!</p>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex justify-between items-center pt-3 border-t border-slate-100">
+                        <div id="stars-level-2" class="text-amber-400 text-lg space-x-1">
+                            <i class="fa-regular fa-star"></i><i class="fa-regular fa-star"></i><i class="fa-regular fa-star"></i>
+                        </div>
+                        <span class="text-xs font-bold bg-sky-100 text-sky-700 px-3 py-1 rounded-full group-hover:bg-sky-400 group-hover:text-white transition">Mulai</span>
+                    </div>
+                </div>
+
+                <!-- Level 3 -->
+                <div onclick="startLevel(3)" class="bg-white rounded-3xl p-5 border-4 border-emerald-200 hover:border-emerald-400 shadow-md hover:shadow-xl cursor-pointer transition transform hover:-translate-y-1 relative group">
+                    <div class="flex items-center gap-4">
+                        <div class="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center text-emerald-500 text-3xl font-black">
+                            🥇
+                        </div>
+                        <div>
+                            <div class="text-xs font-bold text-emerald-600 uppercase tracking-wider">Level 3</div>
+                            <h3 class="text-lg font-bold text-slate-800">Detektif Bunyi</h3>
+                            <p class="text-xs text-slate-500">Pilih bunyi yang benar!</p>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex justify-between items-center pt-3 border-t border-slate-100">
+                        <div id="stars-level-3" class="text-amber-400 text-lg space-x-1">
+                            <i class="fa-regular fa-star"></i><i class="fa-regular fa-star"></i><i class="fa-regular fa-star"></i>
+                        </div>
+                        <span class="text-xs font-bold bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full group-hover:bg-emerald-400 group-hover:text-white transition">Mulai</span>
+                    </div>
+                </div>
+
+                <!-- Level 4 -->
+                <div onclick="startLevel(4)" class="bg-white rounded-3xl p-5 border-4 border-purple-200 hover:border-purple-400 shadow-md hover:shadow-xl cursor-pointer transition transform hover:-translate-y-1 relative group">
+                    <div class="flex items-center gap-4">
+                        <div class="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center text-purple-500 text-3xl font-black">
+                            🏆
+                        </div>
+                        <div>
+                            <div class="text-xs font-bold text-purple-600 uppercase tracking-wider">Level 4</div>
+                            <h3 class="text-lg font-bold text-slate-800">Cocokkan Gambar</h3>
+                            <p class="text-xs text-slate-500">Pasangkan suku kata & gambar!</p>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex justify-between items-center pt-3 border-t border-slate-100">
+                        <div id="stars-level-4" class="text-amber-400 text-lg space-x-1">
+                            <i class="fa-regular fa-star"></i><i class="fa-regular fa-star"></i><i class="fa-regular fa-star"></i>
+                        </div>
+                        <span class="text-xs font-bold bg-purple-100 text-purple-700 px-3 py-1 rounded-full group-hover:bg-purple-400 group-hover:text-white transition">Mulai</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ================= GAMEPLAY CONTAINER ================= -->
+        <section id="view-gameplay" class="hidden space-y-4 animate-pop">
+            <!-- Header Status Level -->
+            <div class="bg-white rounded-2xl p-4 shadow-sm border-2 border-slate-200 flex justify-between items-center">
+                <button onclick="backToLevelSelect()" class="text-slate-600 hover:text-slate-900 font-bold flex items-center gap-2">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    <span>Pilih Level</span>
+                </button>
+                <div class="text-center">
+                    <h3 id="game-title" class="text-lg font-black text-amber-500">Level 1: Meniru Suku Kata</h3>
+                    <p id="game-subtitle" class="text-xs text-slate-400">Fonem B</p>
+                </div>
+                <button onclick="speakInstruction()" class="w-10 h-10 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center shadow hover:bg-amber-200">
+                    <i class="fa-solid fa-volume-high"></i>
+                </button>
+            </div>
+
+            <!-- LEVEL 1: MENIRU SUKU KATA -->
+            <div id="game-level-1" class="hidden bg-white rounded-3xl p-6 shadow-xl border-4 border-amber-300 text-center space-y-6">
+                <p class="text-slate-600 text-sm font-semibold">Dengarkan, lalu tekan mikrofon untuk menirukan!</p>
+
+                <!-- Cards Grid -->
+                <div class="grid grid-cols-2 sm:grid-cols-5 gap-3" id="level1-cards-container">
+                    <!-- Dynamic syllables will be injected here -->
+                </div>
+
+                <!-- Simulation Record Area -->
+                <div class="bg-amber-50 rounded-2xl p-6 border-2 border-dashed border-amber-300 flex flex-col items-center gap-3">
+                    <div id="mic-status" class="text-sm font-bold text-amber-700">Tekan tombol Mikrofon untuk meniru: <span id="current-syllable-display" class="text-2xl text-amber-600 font-black">-</span></div>
+                    <button id="mic-btn" onclick="simulateRecording()" class="w-20 h-20 bg-amber-400 hover:bg-amber-500 active:scale-95 text-white rounded-full flex items-center justify-center text-3xl shadow-lg transition animate-pulse-slow">
+                        <i class="fa-solid fa-microphone"></i>
+                    </button>
+                    <p id="mic-feedback" class="text-xs text-slate-500">Tekan mikrofon untuk meniru suara!</p>
+                </div>
+
+                <button onclick="finishLevel(1)" class="w-full btn-game bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3.5 rounded-2xl text-lg shadow-md">
+                    Selesai & Ambil Bintang ⭐
+                </button>
+            </div>
+
+            <!-- LEVEL 2: MENGULANG CEPAT (POP BUBBLE) -->
+            <div id="game-level-2" class="hidden bg-white rounded-3xl p-6 shadow-xl border-4 border-sky-300 text-center space-y-6">
+                <div class="flex justify-between items-center bg-sky-50 px-4 py-2 rounded-2xl">
+                    <span class="text-xs font-bold text-sky-700">Skor Combo: <span id="l2-score" class="text-lg text-amber-500">0</span></span>
+                    <span class="text-xs font-bold text-sky-700">Target: <span id="l2-target-text" class="text-base text-sky-600 font-black">BA BA BA</span></span>
+                </div>
+
+                <p class="text-slate-600 text-sm">Ketuk gelembung berurutan dari kiri ke kanan sambil membacanya!</p>
+
+                <!-- Bubble Container -->
+                <div class="h-64 bg-gradient-to-b from-sky-100 to-indigo-50 rounded-2xl relative overflow-hidden flex items-center justify-center gap-4 sm:gap-8 p-4" id="bubble-container">
+                    <!-- Dynamic Bubbles Injected Here -->
+                </div>
+
+                <div class="text-xs text-slate-400 italic">Tips: Bacalah suku kata keras-keras setiap kali menekan gelembung!</div>
+            </div>
+
+            <!-- LEVEL 3: SOUND DETECTIVE (MEMBEDAKAN BUNYI) -->
+            <div id="game-level-3" class="hidden bg-white rounded-3xl p-6 shadow-xl border-4 border-emerald-300 text-center space-y-6">
+                <div class="flex justify-between items-center bg-emerald-50 px-4 py-2 rounded-2xl">
+                    <span class="text-xs font-bold text-emerald-700">Soal: <span id="l3-current-question" class="text-sm text-emerald-600">1</span>/3</span>
+                    <span class="text-xs font-bold text-emerald-700">Skor: <span id="l3-score" class="text-sm text-amber-500">0</span></span>
+                </div>
+
+                <div class="space-y-3">
+                    <p class="text-slate-600 text-sm">Dengarkan bunyi rahasia dengan menekan tombol Play, lalu pilih kartu yang tepat!</p>
+                    <button onclick="playTargetSoundL3()" class="w-20 h-20 bg-emerald-400 hover:bg-emerald-500 text-white rounded-full mx-auto flex items-center justify-center text-3xl shadow-lg btn-game">
+                        <i class="fa-solid fa-volume-high"></i>
+                    </button>
+                </div>
+
+                <!-- Answer Cards -->
+                <div class="grid grid-cols-2 gap-4 max-w-sm mx-auto pt-2" id="l3-cards-container">
+                    <!-- Dynamic Cards -->
+                </div>
+            </div>
+
+            <!-- LEVEL 4: OBJECT MATCHER (MENUNJUK GAMBAR) -->
+            <div id="game-level-4" class="hidden bg-white rounded-3xl p-6 shadow-xl border-4 border-purple-300 text-center space-y-6">
+                <div class="flex justify-between items-center bg-purple-50 px-4 py-2 rounded-2xl">
+                    <span class="text-xs font-bold text-purple-700">Mencocokkan Gambar: <span id="l4-progress" class="text-sm text-purple-600">1/3</span></span>
+                </div>
+
+                <div class="bg-purple-50 rounded-2xl p-6 border-2 border-purple-200 flex flex-col items-center gap-4">
+                    <div id="l4-image-display" class="w-32 h-32 bg-white rounded-2xl shadow-md border-4 border-purple-300 flex items-center justify-center text-6xl transform hover:scale-105 transition">
+                        🎈
+                    </div>
+                    <h4 id="l4-word-display" class="text-2xl font-black text-slate-800 tracking-wide">... lon</h4>
+                </div>
+
+                <p class="text-slate-600 text-sm font-semibold">Pilih suku kata awal yang tepat untuk gambar di atas!</p>
+
+                <!-- Options -->
+                <div class="grid grid-cols-3 gap-3 max-w-md mx-auto" id="l4-options-container">
+                    <!-- Dynamic Options -->
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= MODAL WIN / CONGRATULATIONS ================= -->
+        <div id="modal-win" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+            <div class="bg-white rounded-3xl p-6 md:p-8 max-w-md w-full text-center space-y-5 animate-pop shadow-2xl border-4 border-yellow-300">
+                <div class="w-24 h-24 bg-gradient-to-tr from-amber-400 to-yellow-300 rounded-full mx-auto flex items-center justify-center text-5xl text-white shadow-lg animate-bounce">
+                    🏆
+                </div>
+                <div>
+                    <h2 class="text-2xl font-black text-amber-500">HEBAT SEKALI! 🎉</h2>
+                    <p class="text-sm text-slate-600 mt-1">Kamu berhasil menyelesaikan tantangan level ini!</p>
+                </div>
+
+                <!-- Stars Earned -->
+                <div class="flex justify-center gap-2 text-3xl text-amber-400">
+                    <i class="fa-solid fa-star animate-pulse"></i>
+                    <i class="fa-solid fa-star animate-pulse"></i>
+                    <i class="fa-solid fa-star animate-pulse"></i>
+                </div>
+
+                <div class="bg-amber-50 p-4 rounded-2xl border border-amber-200 text-xs text-amber-800 font-bold" id="win-message">
+                    Selamat! Bintang dan Progresmu telah disimpan.
+                </div>
+
+                <button onclick="closeWinModal()" class="w-full btn-game bg-amber-400 hover:bg-amber-500 text-white font-bold py-3.5 rounded-2xl text-lg shadow-md">
+                    Lanjutkan Petualangan 🚀
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer Footer -->
+    <footer class="bg-white/60 border-t border-slate-200 py-3 text-center text-xs text-slate-500 mt-6">
+        <p>© 2026 <strong>Suku Kata CERIA</strong> - Game Edukasi Fonem B, P, M, W untuk Anak Indonesia ❤️</p>
+    </footer>
+
+    <script>
+        /* ================= GAME DATA STRUCTURE ================= */
+        const PHONEME_DATA = {
+            'B': {
+                name: 'Pulau Fonem B',
+                syllables: ['BA', 'BI', 'BU', 'BE', 'BO'],
+                repeatPairs: ['BA BA BA', 'BI BI BI', 'BO BO BO'],
+                discriminations: [
+                    { target: 'BA', option: 'PA', text: 'BA vs PA' },
+                    { target: 'BI', option: 'PI', text: 'BI vs PI' },
+                    { target: 'BO', option: 'PO', text: 'BO vs PO' }
+                ],
+                objects: [
+                    { word: 'Balon', missing: 'lon', correct: 'BA', icon: '🎈', options: ['BA', 'PA', 'MA'] },
+                    { word: 'Biskuit', missing: 'skuit', correct: 'BI', icon: '🍪', options: ['BI', 'PI', 'WI'] },
+                    { word: 'Boneka', missing: 'neka', correct: 'BO', icon: '🧸', options: ['BO', 'PO', 'WO'] }
+                ]
+            },
+            'P': {
+                name: 'Pulau Fonem P',
+                syllables: ['PA', 'PI', 'PU', 'PE', 'PO'],
+                repeatPairs: ['PA PA PA', 'PI PI PI', 'PO PO PO'],
+                discriminations: [
+                    { target: 'PA', option: 'BA', text: 'PA vs BA' },
+                    { target: 'PI', option: 'BI', text: 'PI vs BI' },
+                    { target: 'PO', option: 'BO', text: 'PO vs BO' }
+                ],
+                objects: [
+                    { word: 'Padi', missing: 'di', correct: 'PA', icon: '🌾', options: ['PA', 'BA', 'WA'] },
+                    { word: 'Pisang', missing: 'sang', correct: 'PI', icon: '🍌', options: ['PI', 'BI', 'MI'] },
+                    { word: 'Pot', missing: 't', correct: 'PO', icon: '🪴', options: ['PO', 'BO', 'WO'] }
+                ]
+            },
+            'M': {
+                name: 'Pulau Fonem M',
+                syllables: ['MA', 'MI', 'MU', 'ME', 'MO'],
+                repeatPairs: ['MA MA MA', 'MI MI MI', 'MO MO MO'],
+                discriminations: [
+                    { target: 'MA', option: 'BA', text: 'MA vs BA' },
+                    { target: 'MA', option: 'PA', text: 'MA vs PA' },
+                    { target: 'MI', option: 'PI', text: 'MI vs PI' }
+                ],
+                objects: [
+                    { word: 'Mata', missing: 'ta', correct: 'MA', icon: '👁️', options: ['MA', 'BA', 'PA'] },
+                    { word: 'Mie', missing: 'e', correct: 'MI', icon: '🍜', options: ['MI', 'BI', 'WI'] },
+                    { word: 'Mobil', missing: 'bil', correct: 'MO', icon: '🚗', options: ['MO', 'BO', 'WO'] }
+                ]
+            },
+            'W': {
+                name: 'Pulau Fonem W',
+                syllables: ['WA', 'WI', 'WU', 'WE', 'WO'],
+                repeatPairs: ['WA WA WA', 'WI WI WI', 'WO WO WO'],
+                discriminations: [
+                    { target: 'WA', option: 'BA', text: 'WA vs BA' },
+                    { target: 'WA', option: 'MA', text: 'WA vs MA' },
+                    { target: 'WO', option: 'MO', text: 'WO vs MO' }
+                ],
+                objects: [
+                    { word: 'Wajan', missing: 'jan', correct: 'WA', icon: '🍳', options: ['WA', 'BA', 'MA'] },
+                    { word: 'Wortel', missing: 'rtel', correct: 'WO', icon: '🥕', options: ['WO', 'BO', 'MO'] },
+                    { word: 'Wiwit', missing: 'wit', correct: 'WI', icon: '👧', options: ['WI', 'MI', 'BI'] }
+                ]
+            }
+        };
+
+        /* STATE MANAGEMENT */
+        let activePhoneme = 'B';
+        let currentLevel = 1;
+        let userProgress = JSON.parse(localStorage.getItem('ceria_progress')) || {
+            'B': { 1: 0, 2: 0, 3: 0, 4: 0 },
+            'P': { 1: 0, 2: 0, 3: 0, 4: 0 },
+            'M': { 1: 0, 2: 0, 3: 0, 4: 0 },
+            'W': { 1: 0, 2: 0, 3: 0, 4: 0 }
+        };
+
+        // Temporary Level States
+        let currentSyllableL1 = '';
+        let l2Index = 0;
+        let l2Combo = 0;
+        let l3Index = 0;
+        let l3Score = 0;
+        let l4Index = 0;
+
+        /* WEB AUDIO API FOR SOUND EFFECTS */
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new AudioContext();
+            }
+        }
+
+        function playSoundEffect(type) {
+            initAudio();
+            if (!audioCtx) return;
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'pop') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, now);
+                osc.frequency.exponentialRampToValueAtTime(800, now + 0.1);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.linearRampToValueAtTime(0, now + 0.1);
+                osc.start(now);
+                osc.stop(now + 0.1);
+            } else if (type === 'win') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.setValueAtTime(400, now + 0.1);
+                osc.frequency.setValueAtTime(500, now + 0.2);
+                osc.frequency.setValueAtTime(600, now + 0.3);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.linearRampToValueAtTime(0, now + 0.5);
+                osc.start(now);
+                osc.stop(now + 0.5);
+            } else if (type === 'error') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(200, now);
+                osc.frequency.linearRampToValueAtTime(100, now + 0.2);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.linearRampToValueAtTime(0, now + 0.2);
+                osc.start(now);
+                osc.stop(now + 0.2);
+            }
+        }
+
+        /* WEB SPEECH API (Indonesian Voice) */
+        function speakText(text, rate = 0.9) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel(); // Stop ongoing speech
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'id-ID';
+                utterance.rate = rate;
+                utterance.pitch = 1.1; // Slightly child-friendly pitch
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        /* NAVIGATION FUNCTIONS */
+        function updateDashboardUI() {
+            let totalStars = 0;
+            let totalTrophies = 0;
+
+            ['B', 'P', 'M', 'W'].forEach(ph => {
+                let islandStars = 0;
+                let completedLevels = 0;
+
+                for (let lvl = 1; lvl <= 4; lvl++) {
+                    const stars = userProgress[ph][lvl] || 0;
+                    islandStars += stars;
+                    if (stars > 0) completedLevels++;
+                }
+
+                totalStars += islandStars;
+                if (userProgress[ph][4] > 0) totalTrophies++;
+
+                // Update Island Badge
+                const badge = document.getElementById(`badge-island-${ph.toLowerCase()}`);
+                if (badge) badge.innerHTML = `⭐ ${islandStars}/12`;
+
+                // Update Trophy
+                const trophyElem = document.getElementById(`trophy-island-${ph.toLowerCase()}`);
+                if (trophyElem) {
+                    if (userProgress[ph][4] > 0) {
+                        trophyElem.innerHTML = `<i class="fa-solid fa-trophy text-amber-500 text-xl animate-bounce"></i>`;
+                    } else {
+                        trophyElem.innerHTML = `<i class="fa-solid fa-trophy text-slate-300 text-xl"></i>`;
+                    }
+                }
+            });
+
+            document.getElementById('total-stars-count').innerText = totalStars;
+            document.getElementById('total-trophies-count').innerText = `${totalTrophies}/4`;
+
+            // Save to localStorage
+            localStorage.setItem('ceria_progress', JSON.stringify(userProgress));
+        }
+
+        function showDashboard() {
+            document.getElementById('view-dashboard').classList.remove('hidden');
+            document.getElementById('view-level-select').classList.add('hidden');
+            document.getElementById('view-gameplay').classList.add('hidden');
+            updateDashboardUI();
+        }
+
+        function selectPhoneme(ph) {
+            activePhoneme = ph;
+            document.getElementById('level-select-title').innerText = PHONEME_DATA[ph].name;
+
+            // Render level stars
+            for (let lvl = 1; lvl <= 4; lvl++) {
+                const starsCount = userProgress[ph][lvl] || 0;
+                const starContainer = document.getElementById(`stars-level-${lvl}`);
+                let starsHTML = '';
+                for (let i = 1; i <= 3; i++) {
+                    if (i <= starsCount) {
+                        starsHTML += `<i class="fa-solid fa-star text-amber-400"></i>`;
+                    } else {
+                        starsHTML += `<i class="fa-regular fa-star text-slate-300"></i>`;
+                    }
+                }
+                starContainer.innerHTML = starsHTML;
+            }
+
+            document.getElementById('view-dashboard').classList.add('hidden');
+            document.getElementById('view-level-select').classList.remove('hidden');
+            document.getElementById('view-gameplay').classList.add('hidden');
+        }
+
+        function backToLevelSelect() {
+            selectPhoneme(activePhoneme);
+        }
+
+        function resetProgress() {
+            if (confirm("Apakah kamu yakin ingin mengulang semua hasil belajar CERIA?")) {
+                userProgress = {
+                    'B': { 1: 0, 2: 0, 3: 0, 4: 0 },
+                    'P': { 1: 0, 2: 0, 3: 0, 4: 0 },
+                    'M': { 1: 0, 2: 0, 3: 0, 4: 0 },
+                    'W': { 1: 0, 2: 0, 3: 0, 4: 0 }
+                };
+                updateDashboardUI();
+                alert("Progres berhasil direset!");
+            }
+        }
+
+        function startLevel(lvl) {
+            currentLevel = lvl;
+            document.getElementById('view-level-select').classList.add('hidden');
+            document.getElementById('view-gameplay').classList.remove('hidden');
+
+            // Hide all game level containers
+            for (let i = 1; i <= 4; i++) {
+                document.getElementById(`game-level-${i}`).classList.add('hidden');
+            }
+
+            document.getElementById(`game-level-${lvl}`).classList.remove('hidden');
+            document.getElementById('game-subtitle').innerText = PHONEME_DATA[activePhoneme].name;
+
+            if (lvl === 1) {
+                document.getElementById('game-title').innerText = "Level 1: Meniru Suku Kata";
+                initLevel1();
+            } else if (lvl === 2) {
+                document.getElementById('game-title').innerText = "Level 2: Mengulang Cepat";
+                initLevel2();
+            } else if (lvl === 3) {
+                document.getElementById('game-title').innerText = "Level 3: Detektif Bunyi";
+                initLevel3();
+            } else if (lvl === 4) {
+                document.getElementById('game-title').innerText = "Level 4: Cocokkan Gambar";
+                initLevel4();
+            }
+
+            speakInstruction();
+        }
+
+        function speakInstruction() {
+            if (currentLevel === 1) speakText("Dengarkan, lalu tirukan suku kata berikut ini.");
+            else if (currentLevel === 2) speakText("Membaca berulang. Ketuk gelembung berurutan!");
+            else if (currentLevel === 3) speakText("Dengarkan bunyinya, lalu pilih kartu yang benar!");
+            else if (currentLevel === 4) speakText("Cocokkan suku kata awal yang tepat sesuai gambar!");
+        }
+
+        /* ---------------- LEVEL 1 LOGIC ---------------- */
+        function initLevel1() {
+            const container = document.getElementById('level1-cards-container');
+            container.innerHTML = '';
+            const syllables = PHONEME_DATA[activePhoneme].syllables;
+
+            syllables.forEach((syl, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "btn-game bg-amber-100 hover:bg-amber-200 border-2 border-amber-300 text-amber-800 text-2xl font-black py-4 rounded-2xl flex flex-col items-center justify-center gap-1 shadow-md";
+                btn.innerHTML = `<span>${syl}</span> <i class="fa-solid fa-volume-high text-xs text-amber-500"></i>`;
+                btn.onclick = () => {
+                    speakText(syl);
+                    currentSyllableL1 = syl;
+                    document.getElementById('current-syllable-display').innerText = syl;
+                    playSoundEffect('pop');
+                };
+                container.appendChild(btn);
+            });
+
+            currentSyllableL1 = syllables[0];
+            document.getElementById('current-syllable-display').innerText = currentSyllableL1;
+        }
+
+        function simulateRecording() {
+            const btn = document.getElementById('mic-btn');
+            const feedback = document.getElementById('mic-feedback');
+            
+            btn.classList.add('bg-rose-500', 'animate-ping');
+            btn.classList.remove('bg-amber-400');
+            feedback.innerText = "Mendengarkan suaramu...";
+            speakText(currentSyllableL1);
+
+            setTimeout(() => {
+                btn.classList.remove('bg-rose-500', 'animate-ping');
+                btn.classList.add('bg-amber-400');
+                feedback.innerText = `Pintar! Suaramu menirukan "${currentSyllableL1}" sangat jernih! ✨`;
+                playSoundEffect('win');
+            }, 1500);
+        }
+
+        /* ---------------- LEVEL 2 LOGIC ---------------- */
+        function initLevel2() {
+            l2Index = 0;
+            l2Combo = 0;
+            document.getElementById('l2-score').innerText = '0';
+            renderLevel2Bubble();
+        }
+
+        function renderLevel2Bubble() {
+            const container = document.getElementById('bubble-container');
+            container.innerHTML = '';
+            const pairs = PHONEME_DATA[activePhoneme].repeatPairs;
+            
+            if (l2Index >= pairs.length) {
+                finishLevel(2);
+                return;
+            }
+
+            const targetText = pairs[l2Index];
+            document.getElementById('l2-target-text').innerText = targetText;
+
+            const items = targetText.split(' ');
+            let clickedCount = 0;
+
+            items.forEach((item, idx) => {
+                const bubble = document.createElement('button');
+                bubble.className = "bubble w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center text-xl sm:text-2xl font-black text-sky-700 shadow-xl transition transform hover:scale-110 active:scale-90 animate-float";
+                bubble.innerText = item;
+                
+                bubble.onclick = () => {
+                    playSoundEffect('pop');
+                    speakText(item);
+                    bubble.style.opacity = '0';
+                    bubble.style.transform = 'scale(1.5)';
+                    bubble.disabled = true;
+
+                    clickedCount++;
+                    l2Combo += 10;
+                    document.getElementById('l2-score').innerText = l2Combo;
+
+                    if (clickedCount === items.length) {
+                        setTimeout(() => {
+                            l2Index++;
+                            renderLevel2Bubble();
+                        }, 600);
+                    }
+                };
+
+                container.appendChild(bubble);
+            });
+        }
+
+        /* ---------------- LEVEL 3 LOGIC ---------------- */
+        function initLevel3() {
+            l3Index = 0;
+            l3Score = 0;
+            document.getElementById('l3-score').innerText = '0';
+            renderLevel3Question();
+        }
+
+        function renderLevel3Question() {
+            const list = PHONEME_DATA[activePhoneme].discriminations;
+            if (l3Index >= list.length) {
+                finishLevel(3);
+                return;
+            }
+
+            document.getElementById('l3-current-question').innerText = l3Index + 1;
+            const item = list[l3Index];
+            const container = document.getElementById('l3-cards-container');
+            container.innerHTML = '';
+
+            // Play target audio automatically on load
+            setTimeout(() => {
+                playTargetSoundL3();
+            }, 300);
+
+            // Options array (Target vs Option)
+            const options = [item.target, item.option].sort(() => Math.random() - 0.5);
+
+            options.forEach(opt => {
+                const card = document.createElement('button');
+                card.className = "btn-game bg-white border-4 border-emerald-300 text-emerald-800 text-3xl font-black py-8 rounded-3xl shadow-md hover:bg-emerald-50 transition flex items-center justify-center";
+                card.innerText = opt;
+
+                card.onclick = () => {
+                    if (opt === item.target) {
+                        playSoundEffect('win');
+                        card.classList.add('bg-emerald-200', 'border-emerald-500');
+                        l3Score += 10;
+                        document.getElementById('l3-score').innerText = l3Score;
+                        speakText("Hebat, Benar!");
+
+                        setTimeout(() => {
+                            l3Index++;
+                            renderLevel3Question();
+                        }, 1000);
+                    } else {
+                        playSoundEffect('error');
+                        card.classList.add('animate-shake', 'bg-rose-100', 'border-rose-400');
+                        speakText("Coba lagi ya!");
+                        setTimeout(() => {
+                            card.classList.remove('animate-shake', 'bg-rose-100', 'border-rose-400');
+                        }, 500);
+                    }
+                };
+
+                container.appendChild(card);
+            });
+        }
+
+        function playTargetSoundL3() {
+            const list = PHONEME_DATA[activePhoneme].discriminations;
+            if (list[l3Index]) {
+                speakText(list[l3Index].target);
+            }
+        }
+
+        /* ---------------- LEVEL 4 LOGIC ---------------- */
+        function initLevel4() {
+            l4Index = 0;
+            renderLevel4Question();
+        }
+
+        function renderLevel4Question() {
+            const objects = PHONEME_DATA[activePhoneme].objects;
+            if (l4Index >= objects.length) {
+                finishLevel(4);
+                return;
+            }
+
+            document.getElementById('l4-progress').innerText = `${l4Index + 1}/${objects.length}`;
+            const obj = objects[l4Index];
+
+            document.getElementById('l4-image-display').innerText = obj.icon;
+            document.getElementById('l4-word-display').innerText = `... ${obj.missing}`;
+
+            const container = document.getElementById('l4-options-container');
+            container.innerHTML = '';
+
+            obj.options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = "btn-game bg-purple-100 hover:bg-purple-200 border-2 border-purple-300 text-purple-800 text-2xl font-black py-4 rounded-2xl shadow-md";
+                btn.innerText = opt;
+
+                btn.onclick = () => {
+                    if (opt === obj.correct) {
+                        playSoundEffect('win');
+                        document.getElementById('l4-word-display').innerText = obj.word;
+                        speakText(`${obj.word}! Bagus Sekali!`);
+
+                        setTimeout(() => {
+                            l4Index++;
+                            renderLevel4Question();
+                        }, 1200);
+                    } else {
+                        playSoundEffect('error');
+                        btn.classList.add('animate-shake');
+                        speakText("Kurang tepat!");
+                        setTimeout(() => btn.classList.remove('animate-shake'), 500);
+                    }
+                };
+
+                container.appendChild(btn);
+            });
+        }
+
+        function finishLevel(lvl) {
+            playSoundEffect('win');
+            
+            // Save Progress (3 Stars)
+            userProgress[activePhoneme][lvl] = 3;
+            updateDashboardUI();
+
+            // Fire Confetti Animation
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 80,
+                    spread: 70,
+                    origin: { y: 0.6 }
+                });
+            }
+
+            const winMsg = document.getElementById('win-message');
+            if (lvl === 4) {
+                winMsg.innerText = `Luar biasa! Kamu menyelesaikan semua level di Pulau Fonem ${activePhoneme} dan mendapatkan Trofi! 🏆`;
+            } else {
+                winMsg.innerText = `Selamat! Kamu mendapatkan 3 Bintang di Level ${lvl}! ⭐⭐⭐`;
+            }
+
+            document.getElementById('modal-win').classList.remove('hidden');
+        }
+
+        function closeWinModal() {
+            document.getElementById('modal-win').classList.add('hidden');
+            backToLevelSelect();
+        }
+
+        // Initialize App on Load
+        window.onload = function() {
+            updateDashboardUI();
+        };
+    </script>
+</body>
+</html>
